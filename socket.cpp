@@ -11,7 +11,7 @@ Socket::Socket(int domain, int type, int protocol)
     opt = 1;
     if(socket_fd == -1)
     {
-        cerr << "ERROR STARTING" << endl;
+        cerr << "Error constructing socket" << endl;
         exit(EXIT_FAILURE);
     }
     
@@ -25,17 +25,24 @@ Socket::Socket(int domain, int type, int protocol)
 
 void Socket::startListening(int port)
 {
-    isServer = true;
-    this->address.sin_port = htons(port);
-    if(bind(socket_fd, (sockaddr *)&address, address_length) < 0){cerr << "Error binding to port" << endl; exit(EXIT_FAILURE);}
-    if(listen(socket_fd, 3)){cerr << "Couldn't start listening" << endl; exit(EXIT_FAILURE);}
-    cout << "Listening on port: " << port << endl;
-    if ((connectedSocket_fd = accept(socket_fd, (struct sockaddr *)&address, (socklen_t*)&address_length)) < 0) 
-    { 
-        cerr << "Error connecting to client";
-        exit(EXIT_FAILURE); 
+    if(!isClient){
+        isServer = true;
+        this->address.sin_port = htons(port);
+        if(bind(socket_fd, (sockaddr *)&address, address_length) < 0){cerr << "Error binding to port" << endl; exit(EXIT_FAILURE);}
+        if(listen(socket_fd, 3)){cerr << "Couldn't start listening" << endl; exit(EXIT_FAILURE);}
+        if ((connectedSocket_fd = accept(socket_fd, (struct sockaddr *)&address, (socklen_t*)&address_length)) < 0) 
+        { 
+            cerr << "Error connecting to client";
+            exit(EXIT_FAILURE); 
+        }
     }
-    cout << "Client connected!" << endl; 
+    else
+    {
+        cerr << "Only servers can listen on a port";
+        exit(EXIT_FAILURE);
+    }
+    
+
 }
 
 string Socket::readData()
@@ -43,13 +50,19 @@ string Socket::readData()
     if(isServer)
     {
         char buffer[1024] = {'\0'};
-        recv(connectedSocket_fd, buffer, 1023,  0);
+        recv(connectedSocket_fd, buffer, 1024,  0);
         if(listen(socket_fd, 3)){cerr << "Couldn't listen" << endl; exit(EXIT_FAILURE);}
+        return buffer;
+    }
+    if(isClient)
+    {
+        char buffer[1024] = {'\0'};
+        recv(socket_fd, buffer, 1024,  0);
         return buffer;
     }
     else
     {
-        cerr << "You can't listen for connections if you aren't a server!";
+        cerr << "You must be connected to a socket to read data";
         exit(EXIT_FAILURE);
     }
 }
@@ -85,21 +98,20 @@ void Socket::connectToSocket(const char *address, int port)
 
 }
 
-void Socket::sendData(const char *data)
+void Socket::sendData(const char data[1024])
 {
     if(isServer)
     {
-        send(connectedSocket_fd, data, strlen(data), 0);
+        send(connectedSocket_fd, data, 1024, 0);
     }
     else if(isClient)
     {
-        send(socket_fd, data, strlen(data), 0);
+        send(socket_fd, data, 1024, 0);
     }
     else
     {
         cerr << "You  must first be connected to a socket before sending a message";
     }
-    cout << "Sent message!" << endl;
     
 }
 
