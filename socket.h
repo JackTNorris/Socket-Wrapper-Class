@@ -13,12 +13,12 @@ class Socket
     public:
         Socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol=0); //domain specifies what protocol and addresse we can communicate with, type is TCP or UDP
     
-        void startListening(int port);
+        int startListening(int port);
 
-        void connectToSocket(const char *address, int port);
+        int connectToSocket(const char *address, int port);
 
-        string readData(); //great functions for 
-        void sendData(const char *data);
+        int readData(string &buff); //great functions for 
+        int sendData(const char *data);
     private:
         int socket_fd; //socket file descriptor for THIS socket object
         sockaddr_in address;
